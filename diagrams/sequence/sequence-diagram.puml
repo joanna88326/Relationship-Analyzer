@@ -1,0 +1,28 @@
+@startuml
+participant ": Client" as client
+participant "analyzer : SuperRelationshipAnalyzerAdapter" as adapter
+participant ": SuperRelationshipAnalyzer" as super
+
+client -> client : script = 讀取 "script.txt"
+
+client -> adapter ++ : parse(script)
+adapter -> adapter : 解析格式一腳本，記錄每個人的好友清單
+adapter -> adapter : 將格式一腳本轉成格式二腳本
+adapter -> super ++ : init(格式二腳本)
+deactivate super
+adapter --> client
+deactivate adapter
+
+client -> adapter ++ : getMutualFriends("A", "B")
+adapter -> adapter : candidates = A 或 B 其中一人的好友清單
+loop 對 candidates 中的每位 candidate
+  adapter -> super ++ : isMutualFriend(candidate, "A", "B")
+  super --> adapter : result
+  deactivate super
+  adapter -> adapter : [result 為 true] 將 candidate 加入 mutualFriends
+end
+adapter --> client : mutualFriends
+deactivate adapter
+
+client -> client : 印出 A 與 B 的共同好友列表
+@enduml

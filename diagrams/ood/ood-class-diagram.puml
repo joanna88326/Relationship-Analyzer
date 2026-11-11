@@ -1,0 +1,85 @@
+@startuml
+left to right direction
+
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+
+skinparam classBackgroundColor #FFF2CC
+skinparam classBorderColor #7F6000
+skinparam interfaceBackgroundColor #DDEBF7
+skinparam interfaceBorderColor #2F5597
+
+skinparam classBackgroundColor<<Implementation>> #E2F0D9
+skinparam classBorderColor<<Implementation>> #548235
+
+class Client
+
+interface RelationshipAnalyzer {
+    +parse(script : String) : void
+    +getMutualFriends(name1 : String, name2 : String) : String[*]
+}
+
+class SuperRelationshipAnalyzer {
+    +init(script : String) : void
+    +isMutualFriend(targetName : String, name1 : String, name2 : String) : boolean
+}
+
+class SuperRelationshipAnalyzerAdapter <<Implementation>> {
+    -friendsMap : Map<String, String[*]>
+    +parse(script : String) : void
+    +getMutualFriends(name1 : String, name2 : String) : String[*]
+}
+
+Client --> "1" RelationshipAnalyzer : analyzer
+RelationshipAnalyzer <|.. SuperRelationshipAnalyzerAdapter
+SuperRelationshipAnalyzerAdapter *--> "1" SuperRelationshipAnalyzer
+
+note bottom of Client
+    String script = read script from file("script.txt")
+    analyzer.parse(script)
+    print getMutualFriends("A", "B") // 印出 A 和 B 的共同好友列表
+end note
+
+note top of RelationshipAnalyzer
+    好友關係分析器的公開介面
+    解析好友關係腳本，並提供共同好友查詢能力。
+end note
+
+note left of RelationshipAnalyzer::"parse(script : String)"
+    腳本格式（格式一）：
+    每行描述一個人的好友清單，
+    "<name>: " 之後列出 0 至多個好友名稱，
+    好友名稱以空白分隔。
+    例：C: A E G K M
+end note
+
+note top of SuperRelationshipAnalyzer
+    好友關係分析器的具體實作
+end note
+
+note right of SuperRelationshipAnalyzer::"init(script : String)"
+    腳本格式（格式二）：
+    每行描述一組好友關係，
+    "<name1> -- <name2>"，
+    表示兩人互為好友。
+    例：A -- B
+end note
+
+note bottom of SuperRelationshipAnalyzer
+    設計需求：整合 SuperRelationshipAnalyzer
+    操作與腳本格式皆不同於 RelationshipAnalyzer，
+    須整合使既有 Client 仍能完成共同好友查詢。
+    不得修改 Client、RelationshipAnalyzer
+    與 SuperRelationshipAnalyzer 的程式碼。
+end note
+
+note bottom of SuperRelationshipAnalyzerAdapter
+    轉接 RelationshipAnalyzer 與 SuperRelationshipAnalyzer
+    parse：記錄每個人的好友清單，
+    並將格式一轉成格式二交給 SuperRelationshipAnalyzer
+    getMutualFriends：取得 name1 或 name2 其中一人的好友清單，
+    逐一以 isMutualFriend 判斷是否為共同好友，
+    收集成立者
+end note
+
+@enduml
